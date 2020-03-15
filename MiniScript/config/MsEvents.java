@@ -1,17 +1,48 @@
 package MiniScript.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
-import MiniScript.commands.ConfigCmd;
+import MiniScript.commands.MsCmd;
 import MiniScript.loader.scripting.Script;
+import MiniScript.utils.Utils;
 
-public class ConfigEvents implements Listener {
+@SuppressWarnings("deprecation")
+public class MsEvents implements Listener {
 
+	private List<Player> typingWorkspace = new ArrayList<Player>();
+	
+	@EventHandler
+	public void onSetNewWorkspace(PlayerChatEvent event)
+	{
+		Player p = event.getPlayer();
+		if(typingWorkspace.contains(p))
+		{
+			typingWorkspace.remove(p);
+			String message = event.getMessage();
+			
+			if(message.contains("."))
+			{
+				p.sendMessage("§cWorkspace must be a directory");
+				return;
+			}
+			
+			Utils.setWorkspaceDir(message);
+			MiniScript.MiniScript.recreateFileLoader();
+			
+			p.sendMessage("§aWorkspace has been created successfully in server files.");
+			event.setCancelled(true);
+		}
+	}
+	
 	@EventHandler
 	public void onRunScript(InventoryClickEvent event)
 	{
@@ -43,7 +74,7 @@ public class ConfigEvents implements Listener {
 			name = name.substring(2, name.length());
 			Script s = MiniScript.MiniScript.getFileLoader().getScriptMap().get(name);
 			s.toggle();
-			Config.giveScriptsInventory(p);
+			MS.giveScriptsInventory(p);
 			event.setCancelled(true);
 		}
 	}
@@ -57,14 +88,19 @@ public class ConfigEvents implements Listener {
 		
 		if(it != null && view.getTitle().equalsIgnoreCase("§bScripts Parameters"))
 		{
-			if(it.isSimilar(ConfigCmd.scriptsItem))
+			if(it.isSimilar(MsCmd.scriptsItem))
 			{
 				p.closeInventory();
-				Config.giveScriptsInventory(p);
-			} else if (it.isSimilar(ConfigCmd.runItem))
+				MS.giveScriptsInventory(p);
+			} else if (it.isSimilar(MsCmd.runItem))
 			{
 				p.closeInventory();
-				Config.giveRunInventory(p);
+				MS.giveRunInventory(p);
+			} else if (it.isSimilar(MsCmd.editWorkspace))
+			{
+				p.closeInventory();
+				typingWorkspace.add(p);
+				p.sendMessage("§7Veuillez envoyer le nom du nouveau workspace dans le chat...");
 			}
 			event.setCancelled(true);
 		}

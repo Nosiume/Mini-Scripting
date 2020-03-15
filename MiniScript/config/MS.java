@@ -11,7 +11,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import MiniScript.loader.scripting.Script;
 
-public class Config {
+public class MS {
 
 	public static void giveScriptsInventory(Player p)
 	{

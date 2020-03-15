@@ -5,10 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 
+import MiniScript.debug.ScriptException;
+import MiniScript.loader.blocks.SBlock;
+import MiniScript.loader.blocks.SBlockType;
 import MiniScript.utils.Utils;
 
 public class Script {
@@ -16,9 +17,8 @@ public class Script {
 	private File script;
 	private String name;
 	private boolean enabled = true;
-	
-	private List<String> lines = new ArrayList<String>();
-	private HashMap<Keyword, String[]> toRun = new HashMap<Keyword, String[]>();
+
+	private List<SBlock> toRun = new ArrayList<SBlock>();
 	
 	public Script(File file, String name)
 	{
@@ -28,33 +28,38 @@ public class Script {
 	
 	public void run()
 	{
-		int lineCount = 1;
-		for(Entry<Keyword, String[]> line : toRun.entrySet())
-		{
-			lineCount++;
-			line.getKey().use(line.getValue(), name, lineCount);
-		}
+		//Trigger default events
+		MiniScript.MiniScript.getFileLoader().triggerEvent(SBlockType.DEFAULT);
 	}
 	
 	public void load()
 	{
+		List<String> lines = new ArrayList<String>();
 		toRun.clear();
 		
 		try {
 			//Load every lines
 			BufferedReader br = new BufferedReader(new FileReader(this.script));
-			String line;
+			String line; // Loads our lines
 			while((line = br.readLine()) != null)
 			{
+				//If it's a commentary then do not load it
 				if(line.startsWith("#"))
 					continue;
 				
-				this.lines.add(line);
+				//Add the line to the line list
+				lines.add(line.trim());
 			}
-			br.close();
+			br.close(); // close the reader
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		//Counts which line we are on
+		int lineCount = 0;
+		
+		//Creates our default block
+		SBlock currBlock = new SBlock(this.name, 1, SBlockType.DEFAULT);
 		
 		//Bind every line to the right keyword and parameters applied to it
 		for(String line : lines)
@@ -62,16 +67,40 @@ public class Script {
 			//Gets every part of our string
 			String[] parts = line.split(" ");
 			
+			//Verify if we want  to switch to another Script Block
+			if(parts[0].equalsIgnoreCase("on"))
+			{
+				SBlockType type = null;
+				try {
+					type = SBlockType.valueOf(parts[1]);
+				} catch (IllegalArgumentException e)
+				{
+					ScriptException sExc = new ScriptException("Unknown Event Type", this.name, lineCount);
+					sExc.printStackTrace();
+				} catch (ArrayIndexOutOfBoundsException e)
+				{
+					ScriptException sExc = new ScriptException("You must specify an event type.", this.name, lineCount);
+					sExc.printStackTrace();
+				}
+				
+				this.toRun.add(currBlock);
+				currBlock = new SBlock(this.name, lineCount, type);
+			}
+			
 			//Verify which keyword is executed by the user
 			for(Keyword keyword : KeywordManager.keywords)
-			{
+			{	
 				//Verify if first word is a "known keyword"
 				if(parts[0].equalsIgnoreCase(keyword.getId()))
 				{
-					toRun.put(keyword, Utils.getSliceOf(parts, 1, parts.length));
+					currBlock.addAction(keyword, Utils.getSliceOf(parts, 1, parts.length));
 				}
 			}
+			
+			lineCount++;
 		}
+		
+		this.toRun.add(currBlock); // Adds last script block
 	}
 	
 	//======== GETTERS ========
@@ -79,6 +108,11 @@ public class Script {
 	public String getName()
 	{
 		return name;
+	}
+	
+	public List<SBlock> getBlocks()
+	{
+		return toRun;
 	}
 	
 	//======== Script Management =======

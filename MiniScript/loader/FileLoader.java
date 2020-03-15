@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Set;
 
 import MiniScript.debug.WorkspaceException;
+import MiniScript.loader.blocks.SBlock;
+import MiniScript.loader.blocks.SBlockType;
 import MiniScript.loader.scripting.Script;
 
 public class FileLoader {
@@ -52,6 +54,25 @@ public class FileLoader {
 		}
 	}
 	
+	//========== Scripts ==========
+	
+	public void triggerEvent(SBlockType type)
+	{
+		for(Script s : MiniScript.MiniScript.getFileLoader().getScripts())
+		{
+			if(s.isEnabled())
+			{
+				for(SBlock bl : s.getBlocks())
+				{
+					if(bl.getType().equals(type))
+					{
+						bl.run();
+					}
+				}
+			}
+		}
+	}
+	
 	//========== GETTERS ==========
 	
 	public HashMap<String, Script> getScriptMap()
@@ -67,6 +88,11 @@ public class FileLoader {
 	public Collection<Script> getScripts()
 	{
 		return this.scripts.values();
+	}
+	
+	public File getWorkspace()
+	{
+		return workspace;
 	}
 	
 }

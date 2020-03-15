@@ -11,12 +11,13 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-public class ConfigCmd implements CommandExecutor {
+public class MsCmd implements CommandExecutor {
 
 	public static ItemStack scriptsItem;
 	public static ItemStack runItem;
+	public static ItemStack editWorkspace;
 	
-	public ConfigCmd()
+	public MsCmd()
 	{
 		scriptsItem = new ItemStack(Material.WRITABLE_BOOK, 1);
 		ItemMeta sMeta = scriptsItem.getItemMeta();
@@ -27,6 +28,11 @@ public class ConfigCmd implements CommandExecutor {
 		ItemMeta rMeta = runItem.getItemMeta();
 		rMeta.setDisplayName("§aRun Script");
 		runItem.setItemMeta(rMeta);
+		
+		editWorkspace = new ItemStack(Material.CHEST);
+		ItemMeta editM = editWorkspace.getItemMeta();
+		editM.setDisplayName("§bCreate New Workspace");
+		editWorkspace.setItemMeta(editM);
 	}
 	
 	@Override
@@ -46,6 +52,7 @@ public class ConfigCmd implements CommandExecutor {
 			
 			inv.addItem(scriptsItem);
 			inv.addItem(runItem);
+			inv.addItem(editWorkspace);
 			
 			p.openInventory(inv);
 			p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
